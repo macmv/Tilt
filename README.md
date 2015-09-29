@@ -1,1 +1,1 @@
-This is my third [Gosu](https://www.libgosu.org/) game. Use the arrow keys to tilt the board. Get all of the green peaces into the center hole to win!
+This is my third [Gosu](https://www.libgosu.org/) game. Use the arrow keys to tilt the board. Get all of the green pieces into the center hole to win!
