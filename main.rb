@@ -3,6 +3,7 @@
 require "gosu"
 require "yaml"
 require "trollop"
+require "colorize"
 
 $opts = Trollop::options do
 	opt :fullscreen, "Go fullscreen"
@@ -37,16 +38,30 @@ class Board
 			end
 			@grid.push new_row
 		end
-		@grid[4][4] = Wall.new 4, 4
-		@movable_blocks = [GreenBlock.new(2, 4)]
-		@plus_x = 0
+		@grid[0][1] = Wall.new 1, 0
+		@grid[4][2] = Wall.new 2, 4
+		@movable_blocks = [GreenBlock.new(0, 0)]
+		@plus_x = 0.125
 		@plus_y = 0
+		@all_movable_blocks_hit_wall = true
+		@hole = Gosu::Image.new "images/hole.png"
 	end
 
 	def update
+		@all_movable_blocks_hit_wall = true
 		@movable_blocks.each do |block|
-			block.move self, @plus_x, @plus_y
+			hit_wall = block.move self, @plus_x, @plus_y
+			if hit_wall == "won"
+				return true
+			end
+			if !hit_wall
+				puts "not hit_wall"
+				@all_movable_blocks_hit_wall = false
+			else
+				puts "hit_wall"	
+			end
 		end
+		false
 	end
 
 	def draw
@@ -55,29 +70,38 @@ class Board
 				item.draw
 			end
 		end
+		@hole.draw 2 * BLOCKSIZE + 100, 2 * BLOCKSIZE, 0
 		@movable_blocks.each do |item|
 			item.draw
 		end
 	end
 
 	def tilt_up
-		@plus_x = 0
-		@plus_y = -0.125
+		if @all_movable_blocks_hit_wall
+			@plus_x = 0
+			@plus_y = -0.125
+		end
 	end
 
 	def tilt_down
-		@plus_x = 0
-		@plus_y = 0.125
+		if @all_movable_blocks_hit_wall
+			@plus_x = 0
+			@plus_y = 0.125
+		end
 	end
 
 	def tilt_right
-		@plus_x = 0.125
-		@plus_y = 0
+		if @all_movable_blocks_hit_wall
+			@plus_x = 0.125
+			@plus_y = 0
+		end
 	end
 
 	def tilt_left
-		@plus_x = -0.125
-		@plus_y = 0
+		if @all_movable_blocks_hit_wall
+			@plus_x = -0.125
+			@plus_y = 0
+		end
 	end
 
 end
@@ -94,18 +118,37 @@ class GreenBlock
 	end
 
 	def move(board, plus_x, plus_y)
+		if @x == 2.0 && @y == 2.0
+			return "won"
+		end
 		if !@hit_wall
 			@x += plus_x
-			@x -= plus_x if @x < 0 || @x > 4
-			if board.grid[@y + 0][@x + 0].class == Wall
-				8.times { @x -= plus_x }
+			if @x < 0 || @x > 4
+				@x -= plus_x
 				@hit_wall = true
 			end
-			@y += plus_y
-			@y -= plus_y if @y < 0 || @y > 4
 			if board.grid[@y + 0][@x + 0].class == Wall
-				8.times { @x -= plus_x }
+				if plus_x > 0
+					8.times { @x -= plus_x }
+				else
+					@x -= plus_x
+				end
 				@hit_wall = true
+			end
+			if !@hit_wall
+				@y += plus_y
+				if @y < 0 || @y > 4
+					@y -= plus_y
+					@hit_wall = true
+				end
+				if board.grid[@y + 0][@x + 0].class == Wall
+					if plus_y > 0
+						8.times { @y -= plus_y }
+					else
+						@y -= plus_y
+					end
+					@hit_wall = true
+				end
 			end
 		end
 		if @old_plus_x != plus_x || @old_plus_y != plus_y
@@ -113,6 +156,7 @@ class GreenBlock
 		end
 		@old_plus_x = plus_x
 		@old_plus_y = plus_y
+		@hit_wall
 	end
 
 	def draw
@@ -158,7 +202,12 @@ class Screen < Gosu::Window
 	end
 
 	def update
-		@board.update
+		won = @board.update
+		if won
+			puts "YOU WON".green
+			sleep 2
+			exit
+		end
 		if Gosu::button_down?(Gosu::KbW) || Gosu::button_down?(Gosu::KbUp)
 			@board.tilt_up
 		end
