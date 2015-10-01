@@ -17,6 +17,10 @@ class NilClass
 
 end
 
+def is_dot_o?(num)
+	num.to_i.to_f == num
+end
+
 module Tilt
 
 WIDTH = 800
@@ -128,12 +132,22 @@ class GreenBlock
 				@hit_wall = true
 			end
 			if board.grid[@y + 0][@x + 0].class == Wall
-				if plus_x > 0
-					8.times { @x -= plus_x }
-				else
-					@x -= plus_x
-				end
+				@x -= plus_x
 				@hit_wall = true
+			end
+			x_is_dot_o = false
+			if !is_dot_o?(@y)
+				if board.grid[@y + 1][@x + 0].class == Wall
+					@x -= plus_x
+					@hit_wall = true
+				end
+				x_is_dot_o = true
+			end
+			if !is_dot_o?(@x)
+				if board.grid[@y + (x_is_dot_o ? 1 : 0)][@x + 1].class == Wall
+					@x -= plus_x
+					@hit_wall = true
+				end
 			end
 			if !@hit_wall
 				@y += plus_y
@@ -142,12 +156,22 @@ class GreenBlock
 					@hit_wall = true
 				end
 				if board.grid[@y + 0][@x + 0].class == Wall
-					if plus_y > 0
-						8.times { @y -= plus_y }
-					else
 						@y -= plus_y
-					end
 					@hit_wall = true
+				end
+				y_is_dot_o = false
+				if !is_dot_o?(@y)
+					if board.grid[@y + 1][@x + 0].class == Wall
+						@x -= plus_x
+						@hit_wall = true
+					end
+					y_is_dot_o = true
+				end
+				if !is_dot_o?(@x)
+					if board.grid[@y + (y_is_dot_o ? 1 : 0)][@x + 1].class == Wall
+						@x -= plus_x
+						@hit_wall = true
+					end
 				end
 			end
 		end
